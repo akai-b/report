@@ -133,39 +133,39 @@ function initChart(id, option) {
 function renderCharts() {
   const months = DATA.monthTable.map(x => x['月份']);
   initChart('monthTrend', {
-    tooltip: { trigger:'axis' }, legend: { top:0 }, grid: { left:50, right:42, top:54, bottom:36 },
+    tooltip: { trigger:'axis' }, legend: { top:0 }, grid: { left:50, right:52, top:68, bottom:36 },
     xAxis: { type:'category', data:months },
     yAxis: [{ type:'value', name:'销售数量' }, { type:'value', name:'订单数' }],
     series: [
-      { name:'销售数量', type:'bar', data:DATA.monthTable.map(x=>x['销售数量']), itemStyle:{color:'#00a6c8'} },
-      { name:'订单数', type:'line', yAxisIndex:1, data:DATA.monthTable.map(x=>x['订单数']), itemStyle:{color:'#f59e0b'} }
+      { name:'销售数量', type:'bar', data:DATA.monthTable.map(x=>x['销售数量']), label:{show:true, position:'top', formatter:p=>fmtNumber(p.value)}, itemStyle:{color:'#00a6c8'} },
+      { name:'订单数', type:'line', yAxisIndex:1, data:DATA.monthTable.map(x=>x['订单数']), label:{show:true, position:'top', formatter:p=>fmtInt(p.value)}, itemStyle:{color:'#f59e0b'} }
     ]
   });
 
   const productQty = [...DATA.topProductsByQuantity].reverse();
   initChart('productQty', {
-    tooltip: { trigger:'axis', axisPointer:{type:'shadow'} }, grid: { left:90, right:28, top:16, bottom:24 },
+    tooltip: { trigger:'axis', axisPointer:{type:'shadow'} }, grid: { left:90, right:76, top:16, bottom:24 },
     xAxis: { type:'value' }, yAxis: { type:'category', data:productQty.map(x=>x['产品']) },
-    series: [{ name:'销售数量', type:'bar', data:productQty.map(x=>x['销售数量']), itemStyle:{color:'#16a34a', borderRadius:[0,8,8,0]} }]
+    series: [{ name:'销售数量', type:'bar', data:productQty.map(x=>x['销售数量']), label:{show:true, position:'right', formatter:p=>fmtNumber(p.value)}, itemStyle:{color:'#16a34a', borderRadius:[0,8,8,0]} }]
   });
 
   const productOrders = [...topProductsByOrders].reverse();
   initChart('productOrders', {
-    tooltip: { trigger:'axis', axisPointer:{type:'shadow'} }, grid: { left:90, right:28, top:16, bottom:24 },
+    tooltip: { trigger:'axis', axisPointer:{type:'shadow'} }, grid: { left:90, right:76, top:16, bottom:24 },
     xAxis: { type:'value' }, yAxis: { type:'category', data:productOrders.map(x=>x['产品']) },
-    series: [{ name:'订单数', type:'bar', data:productOrders.map(x=>x['订单数']), itemStyle:{color:'#326bff', borderRadius:[0,8,8,0]} }]
+    series: [{ name:'订单数', type:'bar', data:productOrders.map(x=>x['订单数']), label:{show:true, position:'right', formatter:p=>fmtInt(p.value)}, itemStyle:{color:'#326bff', borderRadius:[0,8,8,0]} }]
   });
 
   initChart('sellerRank', {
-    tooltip: { trigger:'axis', axisPointer:{type:'shadow'} }, grid: { left:52, right:20, top:26, bottom:60 },
+    tooltip: { trigger:'axis', axisPointer:{type:'shadow'} }, grid: { left:52, right:28, top:42, bottom:60 },
     xAxis: { type:'category', data:topSellersByOrders.map(x=>x['产品经理']), axisLabel:{rotate:35} },
     yAxis: { type:'value' },
-    series: [{ name:'订单数', type:'bar', data:topSellersByOrders.map(x=>x['订单数']), itemStyle:{color:'#00a6c8', borderRadius:[8,8,0,0]} }]
+    series: [{ name:'订单数', type:'bar', data:topSellersByOrders.map(x=>x['订单数']), label:{show:true, position:'top', formatter:p=>fmtInt(p.value)}, itemStyle:{color:'#00a6c8', borderRadius:[8,8,0,0]} }]
   });
 
   initChart('sellerPie', {
     tooltip: { trigger:'item' }, legend: { type:'scroll', bottom:0 },
-    series: [{ name:'订单数占比', type:'pie', radius:['42%','68%'], center:['50%','45%'], data:topSellersByOrders.map(x=>({name:x['产品经理'], value:x['订单数']})) }]
+    series: [{ name:'订单数占比', type:'pie', radius:['42%','68%'], center:['50%','45%'], label:{show:true, formatter:'{b}: {c} ({d}%)'}, data:topSellersByOrders.map(x=>({name:x['产品经理'], value:x['订单数']})) }]
   });
 }
 

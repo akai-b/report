@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>2026 年销售数据透视表</title>
+		<style>
+			:root {
+				--bg: #f5f7fb;
+				--card: #ffffff;
+				--text: #172033;
+				--muted: #697386;
+				--line: #e6eaf2;
+				--blue: #326bff;
+				--cyan: #00a6c8;
+				--shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+				--radius: 18px;
+			}
+			* {
+				box-sizing: border-box;
+			}
+			body {
+				margin: 0;
+				font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', Arial, sans-serif;
+				background: var(--bg);
+				color: var(--text);
+			}
+			.page {
+				width: min(1440px, 100%);
+				margin: 0 auto;
+				padding: 24px;
+			}
+			.hero {
+				display: flex;
+				justify-content: space-between;
+				gap: 16px;
+				align-items: flex-end;
+				margin-bottom: 18px;
+			}
+			.hero h1 {
+				margin: 0 0 8px;
+				font-size: 30px;
+				letter-spacing: 0.2px;
+			}
+			.hero p {
+				margin: 0;
+				color: var(--muted);
+				line-height: 1.7;
+			}
+			.badge {
+				white-space: nowrap;
+				color: #fff;
+				background: linear-gradient(135deg, var(--blue), var(--cyan));
+				padding: 10px 14px;
+				border-radius: 999px;
+				font-size: 13px;
+				box-shadow: var(--shadow);
+			}
+			.kpi-grid {
+				display: grid;
+				grid-template-columns: repeat(4, 1fr);
+				gap: 14px;
+				margin-bottom: 16px;
+			}
+			.kpi {
+				background: var(--card);
+				border: 1px solid var(--line);
+				border-radius: var(--radius);
+				padding: 18px;
+				box-shadow: var(--shadow);
+			}
+			.kpi .label {
+				color: var(--muted);
+				font-size: 13px;
+				margin-bottom: 10px;
+			}
+			.kpi .value {
+				font-size: 25px;
+				font-weight: 800;
+				word-break: break-all;
+			}
+			.card {
+				background: var(--card);
+				border: 1px solid var(--line);
+				border-radius: var(--radius);
+				padding: 18px;
+				box-shadow: var(--shadow);
+				min-width: 0;
+			}
+			.card-title {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				gap: 12px;
+				margin-bottom: 12px;
+			}
+			.card-title h2 {
+				margin: 0;
+				font-size: 18px;
+			}
+			.card-title span {
+				color: var(--muted);
+				font-size: 12px;
+			}
+			.tabs {
+				display: flex;
+				gap: 8px;
+				flex-wrap: wrap;
+				margin-bottom: 12px;
+			}
+			.tab {
+				border: 1px solid var(--line);
+				background: #fff;
+				color: #475569;
+				padding: 8px 12px;
+				border-radius: 999px;
+				cursor: pointer;
+			}
+			.tab.active {
+				background: #172033;
+				color: #fff;
+				border-color: #172033;
+			}
+			.table-wrap {
+				width: 100%;
+				overflow: auto;
+				border: 1px solid var(--line);
+				border-radius: 14px;
+			}
+			table {
+				width: 100%;
+				min-width: 860px;
+				border-collapse: collapse;
+				font-size: 13px;
+				background: #fff;
+			}
+			th,
+			td {
+				padding: 11px 12px;
+				border-bottom: 1px solid var(--line);
+				text-align: right;
+				white-space: nowrap;
+			}
+			th:first-child,
+			td:first-child {
+				text-align: left;
+			}
+			th {
+				position: sticky;
+				top: 0;
+				z-index: 1;
+				background: #f8fafc;
+				color: #475569;
+				cursor: pointer;
+				user-select: none;
+				font-weight: 700;
+			}
+			tr:hover td {
+				background: #fafcff;
+			}
+			.amount {
+				font-weight: 700;
+				color: #172033;
+			}
+			.link {
+				color: #326bff;
+				text-decoration: none;
+			}
+			@media (max-width: 960px) {
+				.page {
+					padding: 16px;
+				}
+				.hero {
+					align-items: flex-start;
+					flex-direction: column;
+				}
+				.kpi-grid {
+					grid-template-columns: repeat(2, 1fr);
+				}
+			}
+			@media (max-width: 560px) {
+				.page {
+					padding: 12px;
+				}
+				.kpi-grid {
+					grid-template-columns: 1fr;
+				}
+				.card {
+					border-radius: 14px;
+					padding: 14px;
+				}
+				table {
+					font-size: 12px;
+					min-width: 760px;
+				}
+				th,
+				td {
+					padding: 9px 10px;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<main class="page">
+			<section class="hero">
+				<div>
+					<h1>2026 年销售数据透视表</h1>
+					<!-- <p>从主看板底部单独拆出的透视表页面，所有表格均增加“销售额”列。</p> -->
+				</div>
+				<!-- <div class="badge">数据更新：2026-07-05 20:19</div> -->
+			</section>
+			<section class="card">
+				<div class="card-title">
+					<h2>数据透视表</h2>
+					<!-- <span>点击表头可排序，移动端可横向滑动；<a class="link" href="report.html">返回主看板</a></span> -->
+					<span>点击表头可排序</span>
+				</div>
+				<div class="tabs">
+					<button class="tab active" data-table="productTable">产品透视</button>
+					<button class="tab" data-table="sellerTable">人员/产品线透视</button>
+					<button class="tab" data-table="monthTable">月份透视</button>
+					<button class="tab" data-table="crossTable">维度 × 产品</button>
+				</div>
+				<div class="table-wrap" id="tableWrap"></div>
+			</section>
+		</main>
+		<script>
+			const DATA = {
+				kpi: { 总销售数量: 6465.93, 总销售额: 41892903.63, 订单数: 135, 产品数量: 40, 维度数量: 4 },
+				productTable: [
+					{ 产品: 'EC 7000', 销售数量: 643.5, 销售额: 9024097.5, 订单数: 8 },
+					{ 产品: '4203', 销售数量: 1045.0, 销售额: 5920255.0, 订单数: 17 },
+					{ 产品: 'PC480A', 销售数量: 259.0, 销售额: 5796200.0, 订单数: 11 },
+					{ 产品: '2645G', 销售数量: 891.0, 销售额: 3314025.0, 订单数: 7 },
+					{ 产品: '2045G', 销售数量: 492.25, 销售额: 2637937.5, 订单数: 6 },
+					{ 产品: 'W531PL', 销售数量: 216.0, 销售额: 1825200.0, 订单数: 5 },
+					{ 产品: '5815', 销售数量: 153.0, 销售额: 1560600.0, 订单数: 3 },
+					{ 产品: 'H531PL', 销售数量: 297.0, 销售额: 1499340.0, 订单数: 10 },
+					{ 产品: 'FL7642', 销售数量: 83.7, 销售额: 1161791.0, 订单数: 3 },
+					{ 产品: 'AS161R', 销售数量: 72.0, 销售额: 1137600.0, 订单数: 2 },
+					{ 产品: 'SFG195', 销售数量: 65.15, 销售额: 974657.5, 订单数: 6 },
+					{ 产品: '59000', 销售数量: 44.0, 销售额: 846587.5, 订单数: 3 },
+					{ 产品: '2042G', 销售数量: 496.5, 销售额: 752565.0, 订单数: 6 },
+					{ 产品: 'CE3506', 销售数量: 39.6, 销售额: 642720.0, 订单数: 2 },
+					{ 产品: 'AT 6101', 销售数量: 49.5, 销售额: 544500.0, 订单数: 1 },
+					{ 产品: '5401G', 销售数量: 407.0, 销售额: 460460.0, 订单数: 4 },
+					{ 产品: 'W331', 销售数量: 25.48, 销售额: 417655.0, 订单数: 2 },
+					{ 产品: 'DMDA-8920 NT 7', 销售数量: 519.75, 销售额: 412075.13, 订单数: 3 },
+					{ 产品: '1880G', 销售数量: 22.5, 销售额: 377250.0, 订单数: 3 },
+					{ 产品: 'PT1450G1P', 销售数量: 13.75, 销售额: 343750.0, 订单数: 1 },
+					{ 产品: 'LDPE L705', 销售数量: 24.0, 销售额: 304320.0, 订单数: 1 },
+					{ 产品: 'FL7632L', 销售数量: 27.0, 销售额: 286200.0, 订单数: 2 },
+					{ 产品: 'PF7266', 销售数量: 17.4, 销售额: 240122.5, 订单数: 2 },
+					{ 产品: '5220G', 销售数量: 206.25, 销售额: 235455.0, 订单数: 4 },
+					{ 产品: 'W531L', 销售数量: 24.0, 销售额: 166320.0, 订单数: 1 },
+					{ 产品: '1850G', 销售数量: 6.25, 销售额: 141005.0, 订单数: 4 },
+					{ 产品: 'QF551', 销售数量: 3.0, 销售额: 133500.0, 订单数: 2 },
+					{ 产品: 'XUS 89770.05', 销售数量: 11.0, 销售额: 115500.0, 订单数: 1 },
+					{ 产品: '1881G', 销售数量: 6.25, 销售额: 111250.0, 订单数: 1 },
+					{ 产品: '722', 销售数量: 99.0, 销售额: 108900.0, 订单数: 1 },
+					{ 产品: '5401GT', 销售数量: 49.5, 销售额: 84150.0, 订单数: 1 },
+					{ 产品: '2607G', 销售数量: 99.0, 销售额: 80190.0, 订单数: 1 },
+					{ 产品: 'FC9413G', 销售数量: 4.0, 销售额: 59840.0, 订单数: 1 },
+					{ 产品: 'FS6612L', 销售数量: 48.0, 销售额: 53280.0, 订单数: 2 },
+					{ 产品: 'D5545.00', 销售数量: 1.43, 销售额: 52650.0, 订单数: 2 },
+					{ 产品: 'FC9516', 销售数量: 3.0, 销售额: 45360.0, 订单数: 2 },
+					{ 产品: 'D5535.00', 销售数量: 0.5, 销售额: 14000.0, 订单数: 1 },
+					{ 产品: 'F215-P', 销售数量: 0.6, 销售额: 10800.0, 订单数: 1 },
+					{ 产品: 'ST100', 销售数量: 0.05, 销售额: 795.0, 订单数: 1 },
+					{ 产品: '9507N', 销售数量: 0.02, 销售额: 0.0, 订单数: 1 }
+				],
+				sellerTable: [
+					{ 产品线: 'Yuan', 销售数量: 1157.5, 销售额: 16623297.5, 订单数: 25 },
+					{ 产品线: 'Taylor', 销售数量: 4217.3, 销售额: 14013407.63, 订单数: 51 },
+					{ 产品线: 'Wei', 销售数量: 889.33, 销售额: 7931563.5, 订单数: 37 },
+					{ 产品线: 'Julie', 销售数量: 201.8, 销售额: 3324635.0, 订单数: 22 }
+				],
+				monthTable: [
+					{ 月份: '2026-01', 销售数量: 2192.65, 销售额: 3762016.38, 订单数: 26 },
+					{ 月份: '2026-02', 销售数量: 989.75, 销售额: 3943566.25, 订单数: 19 },
+					{ 月份: '2026-03', 销售数量: 1184.75, 销售额: 10361991.0, 订单数: 31 },
+					{ 月份: '2026-04', 销售数量: 1017.73, 销售额: 12763065.0, 订单数: 20 },
+					{ 月份: '2026-05', 销售数量: 761.53, 销售额: 6828975.0, 订单数: 24 },
+					{ 月份: '2026-06', 销售数量: 319.52, 销售额: 4233290.0, 订单数: 15 }
+				],
+				crossTable: [
+					{ 产品线: 'Yuan', 产品: 'EC 7000', 销售数量: 643.5, 销售额: 9024097.5, 订单数: 8 },
+					{ 产品线: 'Taylor', 产品: '4203', 销售数量: 1045.0, 销售额: 5920255.0, 订单数: 17 },
+					{ 产品线: 'Yuan', 产品: 'PC480A', 销售数量: 259.0, 销售额: 5796200.0, 订单数: 11 },
+					{ 产品线: 'Taylor', 产品: '2645G', 销售数量: 891.0, 销售额: 3314025.0, 订单数: 7 },
+					{ 产品线: 'Taylor', 产品: '2045G', 销售数量: 492.25, 销售额: 2637937.5, 订单数: 6 },
+					{ 产品线: 'Wei', 产品: 'W531PL', 销售数量: 216.0, 销售额: 1825200.0, 订单数: 5 },
+					{ 产品线: 'Yuan', 产品: '5815', 销售数量: 153.0, 销售额: 1560600.0, 订单数: 3 },
+					{ 产品线: 'Wei', 产品: 'H531PL', 销售数量: 297.0, 销售额: 1499340.0, 订单数: 10 },
+					{ 产品线: 'Wei', 产品: 'FL7642', 销售数量: 83.7, 销售额: 1161791.0, 订单数: 3 },
+					{ 产品线: 'Wei', 产品: 'AS161R', 销售数量: 72.0, 销售额: 1137600.0, 订单数: 2 },
+					{ 产品线: 'Wei', 产品: 'SFG195', 销售数量: 65.15, 销售额: 974657.5, 订单数: 6 },
+					{ 产品线: 'Julie', 产品: '59000', 销售数量: 44.0, 销售额: 846587.5, 订单数: 3 },
+					{ 产品线: 'Taylor', 产品: '2042G', 销售数量: 496.5, 销售额: 752565.0, 订单数: 6 },
+					{ 产品线: 'Julie', 产品: 'CE3506', 销售数量: 39.6, 销售额: 642720.0, 订单数: 2 },
+					{ 产品线: 'Julie', 产品: 'AT 6101', 销售数量: 49.5, 销售额: 544500.0, 订单数: 1 },
+					{ 产品线: 'Taylor', 产品: '5401G', 销售数量: 407.0, 销售额: 460460.0, 订单数: 4 },
+					{ 产品线: 'Wei', 产品: 'W331', 销售数量: 25.48, 销售额: 417655.0, 订单数: 2 },
+					{ 产品线: 'Taylor', 产品: 'DMDA-8920 NT 7', 销售数量: 519.75, 销售额: 412075.13, 订单数: 3 },
+					{ 产品线: 'Julie', 产品: '1880G', 销售数量: 22.5, 销售额: 377250.0, 订单数: 3 },
+					{ 产品线: 'Julie', 产品: 'PT1450G1P', 销售数量: 13.75, 销售额: 343750.0, 订单数: 1 },
+					{ 产品线: 'Wei', 产品: 'LDPE L705', 销售数量: 24.0, 销售额: 304320.0, 订单数: 1 },
+					{ 产品线: 'Wei', 产品: 'FL7632L', 销售数量: 27.0, 销售额: 286200.0, 订单数: 2 },
+					{ 产品线: 'Julie', 产品: 'PF7266', 销售数量: 17.4, 销售额: 240122.5, 订单数: 2 },
+					{ 产品线: 'Taylor', 产品: '5220G', 销售数量: 206.25, 销售额: 235455.0, 订单数: 4 },
+					{ 产品线: 'Wei', 产品: 'W531L', 销售数量: 24.0, 销售额: 166320.0, 订单数: 1 },
+					{ 产品线: 'Julie', 产品: '1850G', 销售数量: 6.25, 销售额: 141005.0, 订单数: 4 },
+					{ 产品线: 'Yuan', 产品: 'QF551', 销售数量: 3.0, 销售额: 133500.0, 订单数: 2 },
+					{ 产品线: 'Taylor', 产品: 'XUS 89770.05', 销售数量: 11.0, 销售额: 115500.0, 订单数: 1 },
+					{ 产品线: 'Julie', 产品: '1881G', 销售数量: 6.25, 销售额: 111250.0, 订单数: 1 },
+					{ 产品线: 'Yuan', 产品: '722', 销售数量: 99.0, 销售额: 108900.0, 订单数: 1 },
+					{ 产品线: 'Taylor', 产品: '5401GT', 销售数量: 49.5, 销售额: 84150.0, 订单数: 1 },
+					{ 产品线: 'Taylor', 产品: '2607G', 销售数量: 99.0, 销售额: 80190.0, 订单数: 1 },
+					{ 产品线: 'Wei', 产品: 'FC9413G', 销售数量: 4.0, 销售额: 59840.0, 订单数: 1 },
+					{ 产品线: 'Wei', 产品: 'FS6612L', 销售数量: 48.0, 销售额: 53280.0, 订单数: 2 },
+					{ 产品线: 'Julie', 产品: 'D5545.00', 销售数量: 1.43, 销售额: 52650.0, 订单数: 2 },
+					{ 产品线: 'Wei', 产品: 'FC9516', 销售数量: 3.0, 销售额: 45360.0, 订单数: 2 },
+					{ 产品线: 'Julie', 产品: 'D5535.00', 销售数量: 0.5, 销售额: 14000.0, 订单数: 1 },
+					{ 产品线: 'Julie', 产品: 'F215-P', 销售数量: 0.6, 销售额: 10800.0, 订单数: 1 },
+					{ 产品线: 'Taylor', 产品: 'ST100', 销售数量: 0.05, 销售额: 795.0, 订单数: 1 },
+					{ 产品线: 'Julie', 产品: '9507N', 销售数量: 0.02, 销售额: 0.0, 订单数: 1 }
+				],
+				sheetName: 'Sheet1',
+				headers: ['产品', '数量', '销售单价', '产品线', '成交时间'],
+				dimensionName: '产品线',
+				generatedAt: '2026-07-05 20:19'
+			}
+			const fmtNumber = (n, digits = 2) => Number(n || 0).toLocaleString('zh-CN', { maximumFractionDigits: digits, minimumFractionDigits: digits })
+			const fmtInt = (n) => Number(n || 0).toLocaleString('zh-CN')
+			const isMoneyKey = (key) => /销售额|金额/.test(key)
+			function renderKpis() {
+				const k = DATA.kpi
+				const items = [
+					['总销售数量', fmtNumber(k['总销售数量']), '累计销售数量'],
+					['总销售额', '¥' + fmtNumber(k['总销售额']), '数量 × 销售单价汇总'],
+					['订单数', fmtInt(k['订单数']), '原始有效销售记录数'],
+					['产品数量', fmtInt(k['产品数量']), '去重产品型号数']
+				]
+				document.getElementById('kpiGrid').innerHTML = items.map(([label, value, sub]) => `<article class="kpi"><div class="label">${label}</div><div class="value">${value}</div><div class="label">${sub}</div></article>`).join('')
+			}
+			let currentTable = 'productTable'
+			let sortState = { key: '销售额', dir: -1 }
+			function renderTable(name = currentTable) {
+				currentTable = name
+				const rows = [...(DATA[name] || [])]
+				if (!rows.length) {
+					document.getElementById('tableWrap').innerHTML = '<table><tbody><tr><td>暂无数据</td></tr></tbody></table>'
+					return
+				}
+				const keys = Object.keys(rows[0])
+				rows.sort((a, b) => {
+					const av = a[sortState.key],
+						bv = b[sortState.key]
+					if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * sortState.dir
+					return String(av ?? '').localeCompare(String(bv ?? ''), 'zh-CN') * sortState.dir
+				})
+				const html = `<table><thead><tr>${keys.map((k) => `<th data-key="${k}">${k} ${sortState.key === k ? (sortState.dir > 0 ? '▲' : '▼') : ''}</th>`).join('')}</tr></thead><tbody>${rows
+					.map(
+						(r) =>
+							`<tr>${keys
+								.map((k) => {
+									const v = r[k]
+									const text = typeof v === 'number' ? (k === '订单数' ? fmtInt(v) : fmtNumber(v)) : (v ?? '')
+									const cls = isMoneyKey(k) ? ' class="amount"' : ''
+									return `<td${cls}>${text}</td>`
+								})
+								.join('')}</tr>`
+					)
+					.join('')}</tbody></table>`
+				document.getElementById('tableWrap').innerHTML = html
+				document.querySelectorAll('th[data-key]').forEach((th) => {
+					th.addEventListener('click', () => {
+						const key = th.dataset.key
+						sortState = sortState.key === key ? { key, dir: -sortState.dir } : { key, dir: -1 }
+						renderTable(currentTable)
+					})
+				})
+			}
+			function bindTabs() {
+				document.querySelectorAll('.tab').forEach((btn) => {
+					btn.addEventListener('click', () => {
+						document.querySelectorAll('.tab').forEach((x) => x.classList.remove('active'))
+						btn.classList.add('active')
+						sortState = { key: '销售额', dir: -1 }
+						renderTable(btn.dataset.table)
+					})
+				})
+			}
+			bindTabs()
+			renderTable('productTable')
+		</script>
+	</body>
+</html>
