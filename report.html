@@ -81,11 +81,11 @@
         <div id="productOrders" class="chart tall"></div>
       </div>
       <div class="card">
-        <div class="card-title"><h2>产品经理订单数量排行</h2><span>按订单数降序</span></div>
+        <div class="card-title"><h2>产品经理销售数量排行</h2><span>按销售数量降序</span></div>
         <div id="sellerRank" class="chart"></div>
       </div>
       <div class="card">
-        <div class="card-title"><h2>产品经理订单数占比</h2><span>结构占比</span></div>
+        <div class="card-title"><h2>产品经理销售数量占比</h2><span>结构占比</span></div>
         <div id="sellerPie" class="chart"></div>
       </div>
       <div class="card full">
@@ -108,7 +108,7 @@ const fmtInt = n => Number(n || 0).toLocaleString('zh-CN');
 const removeAmountFields = row => Object.fromEntries(Object.entries(row).filter(([key]) => !/单价/.test(key)));
 const rowsWithoutAmount = rows => rows.map(removeAmountFields);
 const topProductsByOrders = [...DATA.productTable].sort((a,b) => b['订单数'] - a['订单数']).slice(0, 15);
-const topSellersByOrders = [...DATA.sellerTable].sort((a,b) => b['订单数'] - a['订单数']);
+const topSellersByQuantity = [...DATA.sellerTable].sort((a,b) => b['销售数量'] - a['销售数量']);
 
 function renderKpis() {
   const k = DATA.kpi;
@@ -158,14 +158,14 @@ function renderCharts() {
 
   initChart('sellerRank', {
     tooltip: { trigger:'axis', axisPointer:{type:'shadow'} }, grid: { left:52, right:28, top:42, bottom:60 },
-    xAxis: { type:'category', data:topSellersByOrders.map(x=>x['产品经理']), axisLabel:{rotate:35} },
+    xAxis: { type:'category', data:topSellersByQuantity.map(x=>x['产品经理']), axisLabel:{rotate:35} },
     yAxis: { type:'value' },
-    series: [{ name:'订单数', type:'bar', data:topSellersByOrders.map(x=>x['订单数']), label:{show:true, position:'top', formatter:p=>fmtInt(p.value)}, itemStyle:{color:'#00a6c8', borderRadius:[8,8,0,0]} }]
+    series: [{ name:'销售数量', type:'bar', data:topSellersByQuantity.map(x=>x['销售数量']), label:{show:true, position:'top', formatter:p=>fmtNumber(p.value)}, itemStyle:{color:'#00a6c8', borderRadius:[8,8,0,0]} }]
   });
 
   initChart('sellerPie', {
     tooltip: { trigger:'item' }, legend: { type:'scroll', bottom:0 },
-    series: [{ name:'订单数占比', type:'pie', radius:['42%','68%'], center:['50%','45%'], label:{show:true, formatter:'{b}: {c} ({d}%)'}, data:topSellersByOrders.map(x=>({name:x['产品经理'], value:x['订单数']})) }]
+    series: [{ name:'销售数量占比', type:'pie', radius:['42%','68%'], center:['50%','45%'], label:{show:true, formatter:p=>`${p.name}: ${fmtNumber(p.value)} (${p.percent}%)`}, data:topSellersByQuantity.map(x=>({name:x['产品经理'], value:x['销售数量']})) }]
   });
 }
 
