@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>2026 年销售数据透视看板</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <style>
+    :root {
+      --bg:#f5f7fb; --card:#ffffff; --text:#172033; --muted:#697386; --line:#e6eaf2;
+      --blue:#326bff; --cyan:#00a6c8; --green:#16a34a; --orange:#f59e0b; --red:#ef4444;
+      --shadow:0 10px 24px rgba(15,23,42,.08); --radius:18px;
+    }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",Arial,sans-serif; background:var(--bg); color:var(--text); }
+    .page { width:min(1440px,100%); margin:0 auto; padding:24px; }
+    .hero { display:flex; justify-content:space-between; gap:16px; align-items:flex-end; margin-bottom:18px; }
+    .hero h1 { margin:0 0 8px; font-size:30px; letter-spacing:.2px; }
+    .hero p { margin:0; color:var(--muted); line-height:1.7; }
+    .badge { white-space:nowrap; color:#fff; background:linear-gradient(135deg,var(--blue),var(--cyan)); padding:10px 14px; border-radius:999px; font-size:13px; box-shadow:var(--shadow); }
+    .kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:16px; }
+    .kpi { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px; box-shadow:var(--shadow); position:relative; overflow:hidden; }
+    .kpi:after { content:""; position:absolute; right:-30px; top:-35px; width:95px; height:95px; border-radius:50%; background:rgba(50,107,255,.08); }
+    .kpi .label { color:var(--muted); font-size:13px; margin-bottom:10px; }
+    .kpi .value { font-size:25px; font-weight:800; word-break:break-all; }
+    .kpi .sub { margin-top:8px; color:var(--muted); font-size:12px; }
+    .grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px; box-shadow:var(--shadow); min-width:0; }
+    .card.full { grid-column:1 / -1; }
+    .card-title { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px; }
+    .card-title h2 { margin:0; font-size:18px; }
+    .card-title span { color:var(--muted); font-size:12px; }
+    .chart { width:100%; height:360px; }
+    .chart.tall { height:460px; }
+    .table-wrap { width:100%; overflow:auto; border:1px solid var(--line); border-radius:14px; }
+    table { width:100%; min-width:780px; border-collapse:collapse; font-size:13px; background:#fff; }
+    th,td { padding:11px 12px; border-bottom:1px solid var(--line); text-align:right; white-space:nowrap; }
+    th:first-child,td:first-child { text-align:left; }
+    th { position:sticky; top:0; z-index:1; background:#f8fafc; color:#475569; cursor:pointer; user-select:none; font-weight:700; }
+    tr:hover td { background:#fafcff; }
+    .danger { color:var(--red); font-weight:700; }
+    .tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+    .tab { border:1px solid var(--line); background:#fff; color:#475569; padding:8px 12px; border-radius:999px; cursor:pointer; }
+    .tab.active { background:#172033; color:#fff; border-color:#172033; }
+    .note { color:var(--muted); font-size:12px; line-height:1.7; margin-top:10px; }
+    @media (max-width: 960px) {
+      .page { padding:16px; } .hero { align-items:flex-start; flex-direction:column; } .hero h1 { font-size:24px; }
+      .kpi-grid { grid-template-columns:repeat(2,1fr); } .grid { grid-template-columns:1fr; }
+      .chart { height:320px; } .chart.tall { height:380px; }
+    }
+    @media (max-width: 560px) {
+      .page { padding:12px; } .kpi-grid { grid-template-columns:1fr; gap:10px; } .kpi,.card { border-radius:14px; padding:14px; }
+      .kpi .value { font-size:22px; } .chart { height:280px; } .chart.tall { height:340px; }
+      table { font-size:12px; min-width:700px; } th,td { padding:9px 10px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div>
+        <h1>2026 年销售数据透视看板</h1>
+        <p>基于 Excel 原始销售记录生成，覆盖月份、产品、销售员、交叉透视与异常数据复核。</p>
+      </div>
+      <div class="badge">数据更新：2026-07-04 16:26</div>
+    </section>
+
+    <section class="kpi-grid" id="kpiGrid"></section>
+
+    <section class="grid">
+      <div class="card full">
+        <div class="card-title"><h2>月度销售趋势</h2><span>销售额 / 数量 / 订单数</span></div>
+        <div id="monthTrend" class="chart"></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><h2>产品销售额 TOP</h2><span>按销售额降序</span></div>
+        <div id="productAmount" class="chart tall"></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><h2>产品销售数量 TOP</h2><span>按数量降序</span></div>
+        <div id="productQty" class="chart tall"></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><h2>销售员业绩排行</h2><span>销售额排行</span></div>
+        <div id="sellerRank" class="chart"></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><h2>销售员销售额占比</h2><span>结构占比</span></div>
+        <div id="sellerPie" class="chart"></div>
+      </div>
+      <div class="card full">
+        <div class="card-title"><h2>数据透视表</h2><span>点击表头可排序，移动端可横向滑动</span></div>
+        <div class="tabs">
+          <button class="tab active" data-table="productTable">产品透视</button>
+          <button class="tab" data-table="sellerTable">人员/产品线透视</button>
+          <button class="tab" data-table="monthTable">月份透视</button>
+          <button class="tab" data-table="crossTable">维度 × 产品</button>
+          <button class="tab" data-table="anomalies">异常数据</button>
+        </div>
+        <div class="table-wrap" id="tableWrap"></div>
+        <div class="note">异常数据规则：单价 ≤ 0、数量 ≤ 0、销售额 ≤ 0，或单价相对同产品均值偏离较大。</div>
+      </div>
+    </section>
+  </main>
+
+<script>
+const DATA = {"kpi":{"总销售额":41892903.63,"总销售数量":6465.96,"订单数":135,"平均销售单价":6478.99,"平均订单金额":310317.8,"产品数量":40,"销售人员数量":4,"正价单平均单价":11783.61},"monthTable":[{"月份":"2026-01","销售额":3762016.38,"销售数量":2192.66,"订单数":26,"平均单价":1715.73,"客单价":144692.94},{"月份":"2026-02","销售额":3943566.25,"销售数量":989.76,"订单数":19,"平均单价":3984.37,"客单价":207556.12},{"月份":"2026-03","销售额":10361991.0,"销售数量":1184.76,"订单数":31,"平均单价":8746.07,"客单价":334257.77},{"月份":"2026-04","销售额":12763065.0,"销售数量":1017.73,"订单数":20,"平均单价":12540.72,"客单价":638153.25},{"月份":"2026-05","销售额":6828975.0,"销售数量":761.53,"订单数":24,"平均单价":8967.44,"客单价":284540.63},{"月份":"2026-06","销售额":4233290.0,"销售数量":319.52,"订单数":15,"平均单价":13248.9,"客单价":282219.33}],"productTable":[{"产品":"EC 7000","销售额":9024097.5,"销售数量":643.5,"订单数":8,"平均单价":14023.46,"客单价":1128012.19},{"产品":"4203","销售额":5920255.0,"销售数量":1045.01,"订单数":17,"平均单价":5665.26,"客单价":348250.29},{"产品":"PC480A","销售额":5796200.0,"销售数量":259.0,"订单数":11,"平均单价":22379.15,"客单价":526927.27},{"产品":"2645G","销售额":3314025.0,"销售数量":891.0,"订单数":7,"平均单价":3719.44,"客单价":473432.14},{"产品":"2045G","销售额":2637937.5,"销售数量":492.25,"订单数":6,"平均单价":5358.94,"客单价":439656.25},{"产品":"W531PL","销售额":1825200.0,"销售数量":216.0,"订单数":5,"平均单价":8450.0,"客单价":365040.0},{"产品":"5815","销售额":1560600.0,"销售数量":153.0,"订单数":3,"平均单价":10200.0,"客单价":520200.0},{"产品":"H531PL","销售额":1499340.0,"销售数量":297.0,"订单数":10,"平均单价":5048.28,"客单价":149934.0},{"产品":"FL7642","销售额":1161791.0,"销售数量":83.7,"订单数":3,"平均单价":13880.42,"客单价":387263.67},{"产品":"AS161R","销售额":1137600.0,"销售数量":72.0,"订单数":2,"平均单价":15800.0,"客单价":568800.0},{"产品":"SFG195","销售额":974657.5,"销售数量":65.15,"订单数":6,"平均单价":14960.21,"客单价":162442.92},{"产品":"59000","销售额":846587.5,"销售数量":44.01,"订单数":3,"平均单价":19236.25,"客单价":282195.83},{"产品":"2042G","销售额":752565.0,"销售数量":496.5,"订单数":6,"平均单价":1515.74,"客单价":125427.5},{"产品":"CE3506","销售额":642720.0,"销售数量":39.6,"订单数":2,"平均单价":16230.3,"客单价":321360.0},{"产品":"AT 6101","销售额":544500.0,"销售数量":49.5,"订单数":1,"平均单价":11000.0,"客单价":544500.0},{"产品":"5401G","销售额":460460.0,"销售数量":407.0,"订单数":4,"平均单价":1131.35,"客单价":115115.0},{"产品":"W331","销售额":417655.0,"销售数量":25.48,"订单数":2,"平均单价":16391.48,"客单价":208827.5},{"产品":"DMDA-8920 NT 7","销售额":412075.13,"销售数量":519.75,"订单数":3,"平均单价":792.83,"客单价":137358.38},{"产品":"1880G","销售额":377250.0,"销售数量":22.5,"订单数":3,"平均单价":16766.67,"客单价":125750.0},{"产品":"PT1450G1P","销售额":343750.0,"销售数量":13.75,"订单数":1,"平均单价":25000.0,"客单价":343750.0},{"产品":"LDPE L705","销售额":304320.0,"销售数量":24.0,"订单数":1,"平均单价":12680.0,"客单价":304320.0},{"产品":"FL7632L","销售额":286200.0,"销售数量":27.0,"订单数":2,"平均单价":10600.0,"客单价":143100.0},{"产品":"PF7266","销售额":240122.5,"销售数量":17.41,"订单数":2,"平均单价":13792.22,"客单价":120061.25},{"产品":"5220G","销售额":235455.0,"销售数量":206.25,"订单数":4,"平均单价":1141.6,"客单价":58863.75},{"产品":"W531L","销售额":166320.0,"销售数量":24.0,"订单数":1,"平均单价":6930.0,"客单价":166320.0},{"产品":"1850G","销售额":141005.0,"销售数量":6.25,"订单数":4,"平均单价":22560.8,"客单价":35251.25},{"产品":"QF551","销售额":133500.0,"销售数量":3.0,"订单数":2,"平均单价":44500.0,"客单价":66750.0},{"产品":"XUS 89770.05","销售额":115500.0,"销售数量":11.0,"订单数":1,"平均单价":10500.0,"客单价":115500.0},{"产品":"1881G","销售额":111250.0,"销售数量":6.25,"订单数":1,"平均单价":17800.0,"客单价":111250.0},{"产品":"722","销售额":108900.0,"销售数量":99.0,"订单数":1,"平均单价":1100.0,"客单价":108900.0},{"产品":"5401GT","销售额":84150.0,"销售数量":49.5,"订单数":1,"平均单价":1700.0,"客单价":84150.0},{"产品":"2607G","销售额":80190.0,"销售数量":99.0,"订单数":1,"平均单价":810.0,"客单价":80190.0},{"产品":"FC9413G","销售额":59840.0,"销售数量":4.0,"订单数":1,"平均单价":14960.0,"客单价":59840.0},{"产品":"FS6612L","销售额":53280.0,"销售数量":48.0,"订单数":2,"平均单价":1110.0,"客单价":26640.0},{"产品":"D5545.00","销售额":52650.0,"销售数量":1.43,"订单数":2,"平均单价":36818.18,"客单价":26325.0},{"产品":"FC9516","销售额":45360.0,"销售数量":3.0,"订单数":2,"平均单价":15120.0,"客单价":22680.0},{"产品":"D5535.00","销售额":14000.0,"销售数量":0.5,"订单数":1,"平均单价":28000.0,"客单价":14000.0},{"产品":"F215-P","销售额":10800.0,"销售数量":0.6,"订单数":1,"平均单价":18000.0,"客单价":10800.0},{"产品":"ST100","销售额":795.0,"销售数量":0.05,"订单数":1,"平均单价":15900.0,"客单价":795.0},{"产品":"9507N","销售额":0.0,"销售数量":0.02,"订单数":1,"平均单价":0.0,"客单价":0.0}],"sellerTable":[{"销售员":"Yuan","销售额":16623297.5,"销售数量":1157.5,"订单数":25,"平均单价":14361.38,"客单价":664931.9},{"销售员":"Taylor","销售额":14013407.63,"销售数量":4217.31,"订单数":51,"平均单价":3322.83,"客单价":274772.7},{"销售员":"Wei","销售额":7931563.5,"销售数量":889.33,"订单数":37,"平均单价":8918.58,"客单价":214366.58},{"销售员":"Julie","销售额":3324635.0,"销售数量":201.82,"订单数":22,"平均单价":16473.27,"客单价":151119.77}],"crossTable":[{"销售员":"Yuan","产品":"EC 7000","销售额":9024097.5,"销售数量":643.5,"订单数":8,"平均单价":14023.46},{"销售员":"Taylor","产品":"4203","销售额":5920255.0,"销售数量":1045.01,"订单数":17,"平均单价":5665.26},{"销售员":"Yuan","产品":"PC480A","销售额":5796200.0,"销售数量":259.0,"订单数":11,"平均单价":22379.15},{"销售员":"Taylor","产品":"2645G","销售额":3314025.0,"销售数量":891.0,"订单数":7,"平均单价":3719.44},{"销售员":"Taylor","产品":"2045G","销售额":2637937.5,"销售数量":492.25,"订单数":6,"平均单价":5358.94},{"销售员":"Wei","产品":"W531PL","销售额":1825200.0,"销售数量":216.0,"订单数":5,"平均单价":8450.0},{"销售员":"Yuan","产品":"5815","销售额":1560600.0,"销售数量":153.0,"订单数":3,"平均单价":10200.0},{"销售员":"Wei","产品":"H531PL","销售额":1499340.0,"销售数量":297.0,"订单数":10,"平均单价":5048.28},{"销售员":"Wei","产品":"FL7642","销售额":1161791.0,"销售数量":83.7,"订单数":3,"平均单价":13880.42},{"销售员":"Wei","产品":"AS161R","销售额":1137600.0,"销售数量":72.0,"订单数":2,"平均单价":15800.0},{"销售员":"Wei","产品":"SFG195","销售额":974657.5,"销售数量":65.15,"订单数":6,"平均单价":14960.21},{"销售员":"Julie","产品":"59000","销售额":846587.5,"销售数量":44.01,"订单数":3,"平均单价":19236.25},{"销售员":"Taylor","产品":"2042G","销售额":752565.0,"销售数量":496.5,"订单数":6,"平均单价":1515.74},{"销售员":"Julie","产品":"CE3506","销售额":642720.0,"销售数量":39.6,"订单数":2,"平均单价":16230.3},{"销售员":"Julie","产品":"AT 6101","销售额":544500.0,"销售数量":49.5,"订单数":1,"平均单价":11000.0},{"销售员":"Taylor","产品":"5401G","销售额":460460.0,"销售数量":407.0,"订单数":4,"平均单价":1131.35},{"销售员":"Wei","产品":"W331","销售额":417655.0,"销售数量":25.48,"订单数":2,"平均单价":16391.48},{"销售员":"Taylor","产品":"DMDA-8920 NT 7","销售额":412075.13,"销售数量":519.75,"订单数":3,"平均单价":792.83},{"销售员":"Julie","产品":"1880G","销售额":377250.0,"销售数量":22.5,"订单数":3,"平均单价":16766.67},{"销售员":"Julie","产品":"PT1450G1P","销售额":343750.0,"销售数量":13.75,"订单数":1,"平均单价":25000.0},{"销售员":"Wei","产品":"LDPE L705","销售额":304320.0,"销售数量":24.0,"订单数":1,"平均单价":12680.0},{"销售员":"Wei","产品":"FL7632L","销售额":286200.0,"销售数量":27.0,"订单数":2,"平均单价":10600.0},{"销售员":"Julie","产品":"PF7266","销售额":240122.5,"销售数量":17.41,"订单数":2,"平均单价":13792.22},{"销售员":"Taylor","产品":"5220G","销售额":235455.0,"销售数量":206.25,"订单数":4,"平均单价":1141.6},{"销售员":"Wei","产品":"W531L","销售额":166320.0,"销售数量":24.0,"订单数":1,"平均单价":6930.0},{"销售员":"Julie","产品":"1850G","销售额":141005.0,"销售数量":6.25,"订单数":4,"平均单价":22560.8},{"销售员":"Yuan","产品":"QF551","销售额":133500.0,"销售数量":3.0,"订单数":2,"平均单价":44500.0},{"销售员":"Taylor","产品":"XUS 89770.05","销售额":115500.0,"销售数量":11.0,"订单数":1,"平均单价":10500.0},{"销售员":"Julie","产品":"1881G","销售额":111250.0,"销售数量":6.25,"订单数":1,"平均单价":17800.0},{"销售员":"Yuan","产品":"722","销售额":108900.0,"销售数量":99.0,"订单数":1,"平均单价":1100.0},{"销售员":"Taylor","产品":"5401GT","销售额":84150.0,"销售数量":49.5,"订单数":1,"平均单价":1700.0},{"销售员":"Taylor","产品":"2607G","销售额":80190.0,"销售数量":99.0,"订单数":1,"平均单价":810.0},{"销售员":"Wei","产品":"FC9413G","销售额":59840.0,"销售数量":4.0,"订单数":1,"平均单价":14960.0},{"销售员":"Wei","产品":"FS6612L","销售额":53280.0,"销售数量":48.0,"订单数":2,"平均单价":1110.0},{"销售员":"Julie","产品":"D5545.00","销售额":52650.0,"销售数量":1.43,"订单数":2,"平均单价":36818.18},{"销售员":"Wei","产品":"FC9516","销售额":45360.0,"销售数量":3.0,"订单数":2,"平均单价":15120.0},{"销售员":"Julie","产品":"D5535.00","销售额":14000.0,"销售数量":0.5,"订单数":1,"平均单价":28000.0},{"销售员":"Julie","产品":"F215-P","销售额":10800.0,"销售数量":0.6,"订单数":1,"平均单价":18000.0},{"销售员":"Taylor","产品":"ST100","销售额":795.0,"销售数量":0.05,"订单数":1,"平均单价":15900.0},{"销售员":"Julie","产品":"9507N","销售额":0.0,"销售数量":0.02,"订单数":1,"平均单价":0.0}],"anomalies":[{"日期":"2026-06-17","月份":"2026-06","产品":"9507N","销售员":"Julie","数量":0.02,"销售单价":0.0,"销售额":0.0,"异常原因":"单价为 0 或负数；销售额为 0 或负数"},{"日期":"2026-02-09","月份":"2026-02","产品":"PC480A","销售员":"Yuan","数量":10.0,"销售单价":16000.0,"销售额":160000.0,"异常原因":"单价偏离该产品均值较大"},{"日期":"2026-01-20","月份":"2026-01","产品":"EC 7000","销售员":"Yuan","数量":74.25,"销售单价":8770.0,"销售额":651172.5,"异常原因":"单价偏离该产品均值较大"},{"日期":"2026-01-16","月份":"2026-01","产品":"2045G","销售员":"Taylor","数量":247.5,"销售单价":830.0,"销售额":205425.0,"异常原因":"单价偏离该产品均值较大"},{"日期":"2026-01-15","月份":"2026-01","产品":"2042G","销售员":"Taylor","数量":51.0,"销售单价":935.0,"销售额":47685.0,"异常原因":"单价偏离该产品均值较大"}],"topProductsByAmount":[{"产品":"EC 7000","销售额":9024097.5,"销售数量":643.5,"订单数":8,"平均单价":14023.46,"客单价":1128012.19},{"产品":"4203","销售额":5920255.0,"销售数量":1045.01,"订单数":17,"平均单价":5665.26,"客单价":348250.29},{"产品":"PC480A","销售额":5796200.0,"销售数量":259.0,"订单数":11,"平均单价":22379.15,"客单价":526927.27},{"产品":"2645G","销售额":3314025.0,"销售数量":891.0,"订单数":7,"平均单价":3719.44,"客单价":473432.14},{"产品":"2045G","销售额":2637937.5,"销售数量":492.25,"订单数":6,"平均单价":5358.94,"客单价":439656.25},{"产品":"W531PL","销售额":1825200.0,"销售数量":216.0,"订单数":5,"平均单价":8450.0,"客单价":365040.0},{"产品":"5815","销售额":1560600.0,"销售数量":153.0,"订单数":3,"平均单价":10200.0,"客单价":520200.0},{"产品":"H531PL","销售额":1499340.0,"销售数量":297.0,"订单数":10,"平均单价":5048.28,"客单价":149934.0},{"产品":"FL7642","销售额":1161791.0,"销售数量":83.7,"订单数":3,"平均单价":13880.42,"客单价":387263.67},{"产品":"AS161R","销售额":1137600.0,"销售数量":72.0,"订单数":2,"平均单价":15800.0,"客单价":568800.0},{"产品":"SFG195","销售额":974657.5,"销售数量":65.15,"订单数":6,"平均单价":14960.21,"客单价":162442.92},{"产品":"59000","销售额":846587.5,"销售数量":44.01,"订单数":3,"平均单价":19236.25,"客单价":282195.83},{"产品":"2042G","销售额":752565.0,"销售数量":496.5,"订单数":6,"平均单价":1515.74,"客单价":125427.5},{"产品":"CE3506","销售额":642720.0,"销售数量":39.6,"订单数":2,"平均单价":16230.3,"客单价":321360.0},{"产品":"AT 6101","销售额":544500.0,"销售数量":49.5,"订单数":1,"平均单价":11000.0,"客单价":544500.0}],"topProductsByQuantity":[{"产品":"4203","销售额":5920255.0,"销售数量":1045.01,"订单数":17,"平均单价":5665.26,"客单价":348250.29},{"产品":"2645G","销售额":3314025.0,"销售数量":891.0,"订单数":7,"平均单价":3719.44,"客单价":473432.14},{"产品":"EC 7000","销售额":9024097.5,"销售数量":643.5,"订单数":8,"平均单价":14023.46,"客单价":1128012.19},{"产品":"DMDA-8920 NT 7","销售额":412075.13,"销售数量":519.75,"订单数":3,"平均单价":792.83,"客单价":137358.38},{"产品":"2042G","销售额":752565.0,"销售数量":496.5,"订单数":6,"平均单价":1515.74,"客单价":125427.5},{"产品":"2045G","销售额":2637937.5,"销售数量":492.25,"订单数":6,"平均单价":5358.94,"客单价":439656.25},{"产品":"5401G","销售额":460460.0,"销售数量":407.0,"订单数":4,"平均单价":1131.35,"客单价":115115.0},{"产品":"H531PL","销售额":1499340.0,"销售数量":297.0,"订单数":10,"平均单价":5048.28,"客单价":149934.0},{"产品":"PC480A","销售额":5796200.0,"销售数量":259.0,"订单数":11,"平均单价":22379.15,"客单价":526927.27},{"产品":"W531PL","销售额":1825200.0,"销售数量":216.0,"订单数":5,"平均单价":8450.0,"客单价":365040.0},{"产品":"5220G","销售额":235455.0,"销售数量":206.25,"订单数":4,"平均单价":1141.6,"客单价":58863.75},{"产品":"5815","销售额":1560600.0,"销售数量":153.0,"订单数":3,"平均单价":10200.0,"客单价":520200.0},{"产品":"722","销售额":108900.0,"销售数量":99.0,"订单数":1,"平均单价":1100.0,"客单价":108900.0},{"产品":"2607G","销售额":80190.0,"销售数量":99.0,"订单数":1,"平均单价":810.0,"客单价":80190.0},{"产品":"FL7642","销售额":1161791.0,"销售数量":83.7,"订单数":3,"平均单价":13880.42,"客单价":387263.67}],"topSellersByAmount":[{"销售员":"Yuan","销售额":16623297.5,"销售数量":1157.5,"订单数":25,"平均单价":14361.38,"客单价":664931.9},{"销售员":"Taylor","销售额":14013407.63,"销售数量":4217.31,"订单数":51,"平均单价":3322.83,"客单价":274772.7},{"销售员":"Wei","销售额":7931563.5,"销售数量":889.33,"订单数":37,"平均单价":8918.58,"客单价":214366.58},{"销售员":"Julie","销售额":3324635.0,"销售数量":201.82,"订单数":22,"平均单价":16473.27,"客单价":151119.77}],"sheetName":"Sheet1","headers":["产品","数量","销售单价","产品线","成交时间"],"recordCount":135,"generatedAt":"2026-07-04 16:26","dimensionName":"产品线"};
+const fmtNumber = (n, digits=2) => Number(n || 0).toLocaleString('zh-CN', {maximumFractionDigits:digits, minimumFractionDigits:digits});
+const fmtInt = n => Number(n || 0).toLocaleString('zh-CN');
+const isMoneyKey = key => /销售额|单价|客单价|金额/.test(key);
+
+function renderKpis() {
+  const k = DATA.kpi;
+  const items = [
+    ['总销售额', '¥' + fmtNumber(k['总销售额']), '所有订单数量 × 单价汇总'],
+    ['总销售数量', fmtNumber(k['总销售数量']), '累计销售数量'],
+    ['订单数', fmtInt(k['订单数']), '原始有效销售记录数'],
+    ['平均销售单价', '¥' + fmtNumber(k['平均销售单价']), '总销售额 / 总数量'],
+    ['平均订单金额', '¥' + fmtNumber(k['平均订单金额']), '总销售额 / 订单数'],
+    ['产品数量', fmtInt(k['产品数量']), '去重产品型号数'],
+    [DATA.dimensionName + '数量', fmtInt(k['销售人员数量']), '去重' + DATA.dimensionName + '数量'],
+    ['异常记录数', fmtInt(DATA.anomalies.length), '需业务复核的记录'],
+  ];
+  document.getElementById('kpiGrid').innerHTML = items.map(([label,value,sub]) => `
+    <article class="kpi"><div class="label">${label}</div><div class="value">${value}</div><div class="sub">${sub}</div></article>
+  `).join('');
+}
+
+function initChart(id, option) {
+  const chart = echarts.init(document.getElementById(id));
+  chart.setOption(option);
+  window.addEventListener('resize', () => chart.resize());
+  return chart;
+}
+
+function renderCharts() {
+  const months = DATA.monthTable.map(x => x['月份']);
+  initChart('monthTrend', {
+    tooltip: { trigger:'axis' }, legend: { top:0 }, grid: { left:50, right:42, top:54, bottom:36 },
+    xAxis: { type:'category', data:months },
+    yAxis: [{ type:'value', name:'销售额' }, { type:'value', name:'数量/订单' }],
+    series: [
+      { name:'销售额', type:'line', smooth:true, data:DATA.monthTable.map(x=>x['销售额']), areaStyle:{opacity:.12}, itemStyle:{color:'#326bff'} },
+      { name:'销售数量', type:'bar', yAxisIndex:1, data:DATA.monthTable.map(x=>x['销售数量']), itemStyle:{color:'#00a6c8'} },
+      { name:'订单数', type:'line', yAxisIndex:1, data:DATA.monthTable.map(x=>x['订单数']), itemStyle:{color:'#f59e0b'} }
+    ]
+  });
+
+  const productAmount = [...DATA.topProductsByAmount].reverse();
+  initChart('productAmount', {
+    tooltip: { trigger:'axis', axisPointer:{type:'shadow'} }, grid: { left:90, right:28, top:16, bottom:24 },
+    xAxis: { type:'value' }, yAxis: { type:'category', data:productAmount.map(x=>x['产品']) },
+    series: [{ name:'销售额', type:'bar', data:productAmount.map(x=>x['销售额']), itemStyle:{color:'#326bff', borderRadius:[0,8,8,0]} }]
+  });
+
+  const productQty = [...DATA.topProductsByQuantity].reverse();
+  initChart('productQty', {
+    tooltip: { trigger:'axis', axisPointer:{type:'shadow'} }, grid: { left:90, right:28, top:16, bottom:24 },
+    xAxis: { type:'value' }, yAxis: { type:'category', data:productQty.map(x=>x['产品']) },
+    series: [{ name:'销售数量', type:'bar', data:productQty.map(x=>x['销售数量']), itemStyle:{color:'#16a34a', borderRadius:[0,8,8,0]} }]
+  });
+
+  initChart('sellerRank', {
+    tooltip: { trigger:'axis', axisPointer:{type:'shadow'} }, grid: { left:52, right:20, top:26, bottom:60 },
+    xAxis: { type:'category', data:DATA.topSellersByAmount.map(x=>x['销售员']), axisLabel:{rotate:35} },
+    yAxis: { type:'value' },
+    series: [{ name:'销售额', type:'bar', data:DATA.topSellersByAmount.map(x=>x['销售额']), itemStyle:{color:'#00a6c8', borderRadius:[8,8,0,0]} }]
+  });
+
+  initChart('sellerPie', {
+    tooltip: { trigger:'item' }, legend: { type:'scroll', bottom:0 },
+    series: [{ name:'销售额占比', type:'pie', radius:['42%','68%'], center:['50%','45%'], data:DATA.topSellersByAmount.map(x=>({name:x['销售员'], value:x['销售额']})) }]
+  });
+}
+
+let currentTable = 'productTable';
+let sortState = { key: '销售额', dir: -1 };
+function renderTable(name=currentTable) {
+  currentTable = name;
+  const rows = [...(DATA[name] || [])];
+  if (!rows.length) {
+    document.getElementById('tableWrap').innerHTML = '<table><tbody><tr><td>暂无数据</td></tr></tbody></table>';
+    return;
+  }
+  const keys = Object.keys(rows[0]);
+  rows.sort((a,b) => {
+    const av = a[sortState.key], bv = b[sortState.key];
+    if (typeof av === 'number' && typeof bv === 'number') return (av-bv)*sortState.dir;
+    return String(av ?? '').localeCompare(String(bv ?? ''), 'zh-CN') * sortState.dir;
+  });
+  const html = `<table><thead><tr>${keys.map(k=>`<th data-key="${k}">${k} ${sortState.key===k ? (sortState.dir>0?'▲':'▼') : ''}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${keys.map(k=>{
+    const v = r[k];
+    const cls = k === '异常原因' ? ' class="danger"' : '';
+    const text = typeof v === 'number' ? (isMoneyKey(k) ? '¥' + fmtNumber(v) : fmtNumber(v)) : (v ?? '');
+    return `<td${cls}>${text}</td>`;
+  }).join('')}</tr>`).join('')}</tbody></table>`;
+  document.getElementById('tableWrap').innerHTML = html;
+  document.querySelectorAll('th[data-key]').forEach(th => {
+    th.addEventListener('click', () => {
+      const key = th.dataset.key;
+      sortState = sortState.key === key ? {key, dir: -sortState.dir} : {key, dir: -1};
+      renderTable(currentTable);
+    });
+  });
+}
+
+function bindTabs() {
+  document.querySelectorAll('.tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+      btn.classList.add('active');
+      sortState = { key: btn.dataset.table === 'anomalies' ? '销售额' : '销售额', dir: -1 };
+      renderTable(btn.dataset.table);
+    });
+  });
+}
+
+renderKpis();
+renderCharts();
+bindTabs();
+renderTable('productTable');
+</script>
+</body>
+</html>
